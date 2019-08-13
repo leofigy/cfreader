@@ -183,7 +183,7 @@ func ValidateItem(b interface{}, rawType, resourcetype string) (out interface{},
 }
 
 func getProperty(propertyName string, raw interface{}) (CloudFormationType, error) {
-	propertyGen, ok := Indexproperties[propertyName]
+	propertyGen, ok := PropertyIndex[propertyName]
 	if !ok {
 		return nil, fmt.Errorf("Invalid property not found %s", propertyName)
 	}
