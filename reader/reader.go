@@ -1,6 +1,7 @@
 package reader
 
 import (
+	"fmt"
 	"encoding/json"
 
 	"github.com/leofigy/cfreader/reader/awsnative"
@@ -46,7 +47,22 @@ func (resources *Resources) UnmarshalJSON(b []byte) error {
 	}
 
 	for name, raw := range rawResources{
-		
+		nativeResource := awsnative.Resource{}
+		err := json.Unmarshal(*raw, &nativeResource)
+		if err == awsnative.ErrUnsupportedResource {
+			fmt.Printf("Removing %s not supported", name)
+			continue
+		}
+
+		// leaving as it is for debugging will be updated
+		if err != nil {
+			fmt.Printf("Resource %s translation issues %+v", name, err)
+		}
+
+		nativeResources[name] = nativeResource
 	}
 
+	*resources = nativeResources
+
+	return nil
 }

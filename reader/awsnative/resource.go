@@ -1,8 +1,8 @@
 package awsnative
 
 import (
-	"errors"
 	"encoding/json"
+	"errors"
 
     orbs "github.com/leofigy/cfreader/reader/awsnative/properties"
 )
@@ -23,6 +23,7 @@ type rawResource struct {
 	Metadata interface{}
 }
 
+//UnmarshalJSON basic parsing for object
 func (r *Resource) UnmarshalJSON(b []byte) error{
 	var holder rawResource
 	err := json.Unmarshal(b, &holder)
@@ -30,21 +31,28 @@ func (r *Resource) UnmarshalJSON(b []byte) error{
 		return err
 	}
 
-	nativeResource, ok := AwsnativeIndex[holder.Type]
+	// setup
+	r.Type = holder.Type
+	r.Metadata = holder.Metadata
 
+	generator, ok := AwsnativeIndex[holder.Type]
 	if !ok {
 		return ErrUnsupportedResource
 	}
-
 	// Some resources have no properties 
 	if holder.Properties == nil {
-		r.Type = holder.Type
-		r.Metadata = holder.Metadata
-		return
+		return nil
 	}
 
-	
+	nativeResource := generator()
 
+	// inner unmarshal
+	err = json.Unmarshal(*holder.Properties, nativeResource)
+	if err != nil {
+		return err
+	}
 
+	// final conversion
+	r.Properties = nativeResource
 	return nil
 }
