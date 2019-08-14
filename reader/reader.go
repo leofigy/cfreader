@@ -25,7 +25,7 @@ type SyntaxTransformer struct {
 	Tmpl *Template
 }
 
-// Unm
+//UnmarshalJSON default
 func (reader *SyntaxTransformer) UnmarshalJSON(src []byte) error {
 	template := &Template{}
 	if err := json.Unmarshal(src, template); err != nil {
@@ -33,4 +33,20 @@ func (reader *SyntaxTransformer) UnmarshalJSON(src []byte) error {
 	}
 	reader.Tmpl = template
 	return nil
+}
+
+func (resources *Resources) UnmarshalJSON(b []byte) error {
+	var rawResources map[string]*json.RawMessage
+	nativeResources := Resources{}
+
+	err := json.Unmarshal(b, &rawResources)
+
+	if err != nil {
+		return err
+	}
+
+	for name, raw := range rawResources{
+		
+	}
+
 }
