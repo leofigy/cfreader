@@ -2,11 +2,14 @@ package properties
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
 	"strings"
 )
+
+var ErrMissingRequiredField = errors.New("Cloudformation template error: missing required property in input template")
 
 var primitiveSpecTypes = map[string]bool{
 	"string":          true,
@@ -59,12 +62,6 @@ func (h *awsTag) Parse(data string) {
 //Validate the field and remove the references
 func Validate(metadata reflect.Type, b interface{}, name, resourcetype string) (out interface{}, err error) {
 	out = b
-
-	if b == nil {
-		log.Printf("%s field not provided %s", resourcetype, name)
-		return
-	}
-
 	tag, found := metadata.FieldByName(name)
 
 	//This should not happen
@@ -78,6 +75,16 @@ func Validate(metadata reflect.Type, b interface{}, name, resourcetype string) (
 		isRef := false
 		tagInfo := &awsTag{}
 		tagInfo.Parse(cftag)
+
+		if b == nil {
+			// Missing required parameter
+			if tagInfo.Required {
+				log.Printf("%s field not provided  %s\n", resourcetype, name)
+				err = ErrMissingRequiredField
+				return
+			}
+			return
+		}
 
 		if tagInfo.Primitive {
 			out, _ = refFlatter(b)
@@ -98,7 +105,13 @@ func Validate(metadata reflect.Type, b interface{}, name, resourcetype string) (
 				innerList[i], containsRef = refFlatter(item)
 				// It's not a reference and not a primitive type then it's a property
 				if !containsRef && !tagInfo.PrimitiveItem {
-					property, propError := getProperty(resourcetype+"."+tagInfo.ItemType, item)
+					// More patches special case for Tag
+					FQDNResource := tagInfo.ItemType
+					if FQDNResource != "Tag" {
+						FQDNResource = resourcetype + "." + FQDNResource
+					}
+
+					property, propError := getProperty(FQDNResource, item)
 
 					if propError != nil {
 						err = propError
@@ -125,7 +138,13 @@ func Validate(metadata reflect.Type, b interface{}, name, resourcetype string) (
 				innerMap[key], containsRef = refFlatter(value)
 
 				if !containsRef && !tagInfo.PrimitiveItem {
-					property, propError := getProperty(resourcetype+"."+tagInfo.ItemType, value)
+
+					FQDNResource := tagInfo.ItemType
+					if FQDNResource != "Tag" {
+						FQDNResource = resourcetype + "." + FQDNResource
+					}
+
+					property, propError := getProperty(FQDNResource, value)
 					if propError != nil {
 						err = propError
 						continue
@@ -142,7 +161,13 @@ func Validate(metadata reflect.Type, b interface{}, name, resourcetype string) (
 		out, isRef = refFlatter(b)
 
 		if !isRef {
-			property, propError := getProperty(resourcetype+"."+tagInfo.Type, b)
+
+			FQDNResource := tagInfo.Type
+			if FQDNResource != "Tag" {
+				FQDNResource = resourcetype + "." + FQDNResource
+			}
+
+			property, propError := getProperty(FQDNResource, b)
 
 			if propError != nil {
 				err = propError
@@ -152,7 +177,7 @@ func Validate(metadata reflect.Type, b interface{}, name, resourcetype string) (
 		}
 	}
 
-	fmt.Printf("%s Property provided field %s with %+v\n", resourcetype,name, out)
+	fmt.Printf("%s Property provided field %s with %+v\n", resourcetype, name, out)
 
 	return
 }
