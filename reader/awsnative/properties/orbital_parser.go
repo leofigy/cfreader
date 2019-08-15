@@ -61,7 +61,7 @@ func Validate(metadata reflect.Type, b interface{}, name, resourcetype string) (
 	out = b
 
 	if b == nil {
-		log.Printf("field not provided %s", name)
+		log.Printf("%s field not provided %s", resourcetype, name)
 		return
 	}
 
@@ -151,6 +151,8 @@ func Validate(metadata reflect.Type, b interface{}, name, resourcetype string) (
 			out = property
 		}
 	}
+
+	fmt.Printf("%s Property provided field %s with %+v\n", resourcetype,name, out)
 
 	return
 }

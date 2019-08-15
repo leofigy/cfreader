@@ -56,7 +56,7 @@ func (resources *Resources) UnmarshalJSON(b []byte) error {
 
 		// leaving as it is for debugging will be updated
 		if err != nil {
-			fmt.Printf("Resource %s translation issues %+v", name, err)
+			fmt.Printf("Resource %s translation issues %+v\n", name, err)
 		}
 
 		nativeResources[name] = nativeResource
