@@ -16,7 +16,7 @@ func main() {
 		return
 	}
 
-	translator := &reader.SyntaxTransformer{}
+	translator := reader.SyntaxTransformer{}
 
 	// reading input json file
 	payload, err := ioutil.ReadFile(os.Args[1])
@@ -26,11 +26,13 @@ func main() {
 		return
 	}
 
-	err = json.Unmarshal(payload, translator)
+	err = json.Unmarshal(payload, &translator)
 
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
 
-	fmt.Println(translator)
+	if translator.Tmpl != nil {
+		fmt.Printf("%+v\n", translator.Tmpl)
+	}
 }
